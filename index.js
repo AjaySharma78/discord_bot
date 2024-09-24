@@ -200,6 +200,6 @@ app.get("/:shortId", async (req, res) => {
 
 client.login(config.discordToken);
 
-app.listen(config.port, () => {
+app.listen(3000, () => {
     console.log("Server is running on port 3000");
 });
