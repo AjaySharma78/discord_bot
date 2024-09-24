@@ -25,7 +25,7 @@ const app = express();
 
 client.on("messageCreate", (message) => {
     if(message.author.bot) return;
-    message.reply({ content: "Hi from Ajay Sharma!" });
+    message.reply("Hi from Ajay Sharma!");
 });
 
 client.on("interactionCreate", async (interaction) => {
