@@ -24,12 +24,8 @@ const client = new Client({
 const app = express();
 
 client.on("messageCreate", (message) => {
-    if (message.author.bot) return;
-    const avatarUrl = message.author.displayAvatarURL({
-        format: "png",
-        dynamic: true,
-    });
-    message.reply({ content: "Hi from ajay!", files: [avatarUrl] });
+    if(message.author.bot) return;
+    message.reply({ content: "Hi from Ajay Sharma!" });
 });
 
 client.on("interactionCreate", async (interaction) => {
@@ -204,6 +200,6 @@ app.get("/:shortId", async (req, res) => {
 
 client.login(config.discordToken);
 
-app.listen(config.port || 3000, () => {
+app.listen(config.port, () => {
     console.log("Server is running on port 3000");
 });
