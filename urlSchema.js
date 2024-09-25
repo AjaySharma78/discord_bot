@@ -13,6 +13,13 @@ const urlSchema= new mongoose.Schema(
             type:String,
             require:true,
         },
+        visitedHistory:[
+            {
+                date:{
+                    type:Number,
+                },
+        }
+        ]
         
     },{timestamps:true}
     )

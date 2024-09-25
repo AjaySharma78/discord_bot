@@ -24,15 +24,15 @@ const client = new Client({
 const app = express();
 
 client.on("messageCreate", (message) => {
-    if(message.author.bot) return;
+    if (message.author.bot) return;
     message.reply("Hi from Ajay Sharma!");
 });
 
 client.on("interactionCreate", async (interaction) => {
-    if (interaction.commandName === "create") {
-        const ajayValue = interaction.options.getString("link");
+    if (interaction.commandName === "createlink") {
+        const value = interaction.options.getString("link");
         const shortId = nanoid(8);
-        if (!ajayValue ||(!ajayValue.startsWith("http://") && !ajayValue.startsWith("https://"))) {
+        if (!value || (!value.startsWith("http://") && !value.startsWith("https://"))) {
             return await interaction.reply({
                 content: "URL is required and must start with http:// or https://",
                 ephemeral: true,
@@ -41,11 +41,94 @@ client.on("interactionCreate", async (interaction) => {
 
         await UrlShort.create({
             shortId: shortId,
-            redirectUrl: ajayValue,
+            redirectUrl: value,
             createdBy: interaction.user.username,
+            visitedHistory: [],
         });
 
-        await interaction.reply(`Shortened URL: ${config.urlEndPoint}${shortId}`);
+        const linkCreated = new EmbedBuilder()
+        .setColor("Green")
+        .setTitle("Created Link")
+        .setDescription(
+            `Shortened URL: ${config.urlEndPoint}${shortId}`
+        )
+        .addFields(
+            { name: "`NOTE`", value:'It is running on localhost, make sure to purchase a domain and update the config file.'});
+
+
+
+       await interaction.reply({ embeds: [linkCreated] });
+
+    } else if (interaction.commandName === "checklink") {
+        const value = interaction.options.getString("id");
+        if (!value || value.length !== 8) {
+            return await interaction.reply({
+                content: "Invalid URL ID",
+                ephemeral: true,
+            });
+        }
+
+        const Information = await UrlShort.findOne({ shortId: value });
+        if (!Information) {
+            return await interaction.reply({
+                content: "URL not found",
+                ephemeral: true,
+            });
+        }
+        const linkInformation = new EmbedBuilder()
+            .setColor("Gold")
+            .setTitle("Link Information")
+            .setDescription(
+                `Detail information about the link id ${Information.shortId}`
+            )
+            .addFields(
+                { name: "`Created By`", value: `${Information.createdBy}` },
+                { name: "`Redirect Url`", value: `${Information.redirectUrl}` },
+                { name: "`Short Id`", value: `${Information.shortId}` },
+                {
+                    name: "`Number of click`",
+                    value: `${Information.visitedHistory.length}`,
+                },
+                {
+                    name: "`Short Url`",
+                    value: `${config.urlEndPoint}${Information.shortId}`,
+                },
+                { name: "`Created At`", value: `${Information.createdAt}` },
+                { name: "`Updated At`", value: `${Information.updatedAt}` },
+                {
+                    name: "`NOTE`",
+                    value:
+                        "It is running on localhost, make sure to purchase a domain and update the config file.",
+                }
+            );
+        await interaction.reply({ embeds: [linkInformation] });
+    } else if (interaction.commandName === "deletelink") {
+        const auther = interaction.user.username;
+        const value = interaction.options.getString("id");
+
+        if (!value || value.length !== 8) {
+            return await interaction.reply({
+                content: "Invalid URL ID",
+                ephemeral: true,
+            });
+        }
+        const Information = await UrlShort.findOne({ shortId: value });
+        if (!Information) {
+            return await interaction.reply({
+                content: "URL not found",
+                ephemeral: true,
+            });
+        }
+
+        if (Information.createdBy !== auther) {
+            return await interaction.reply({
+                content: "You are not authorized to delete this link",
+                ephemeral: true,
+            });
+        }
+        await UrlShort.deleteOne({ shortId: value });
+        await interaction.reply(`Link of id ${value} deleted successfully`);
+
     } else if (interaction.commandName === "dailyweather") {
         const lat = interaction.options.getString("lat");
         const lon = interaction.options.getString("lon");
@@ -173,13 +256,21 @@ client.on("interactionCreate", async (interaction) => {
                     value: `${daily.list[0].pressure}hPa`,
                     inline: true,
                 },
-                { name: "`Humidity`", value: `${daily.list[0].humidity}%`, inline: true },
+                {
+                    name: "`Humidity`",
+                    value: `${daily.list[0].humidity}%`,
+                    inline: true,
+                },
                 {
                     name: "`Wind Speed`",
                     value: `${daily.list[0].speed}m/s`,
                     inline: true,
                 },
-                { name: "`Cloudiness`", value: `${daily.list[0].clouds}%`, inline: true },
+                {
+                    name: "`Cloudiness`",
+                    value: `${daily.list[0].clouds}%`,
+                    inline: true,
+                },
                 { name: "`Sunrise`", value: `${sunrise}`, inline: true },
                 { name: "`Sunset`", value: `${sunset}`, inline: true }
             );
@@ -188,9 +279,12 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 app.get("/:shortId", async (req, res) => {
-    const { shortId } = req.params;
-    const urlEntry = await UrlShort.findOne({ shortId });
+    const shortId = req.params.shortId;
 
+    const urlEntry = await UrlShort.findOneAndUpdate(
+        { shortId },
+        { $push: { visitedHistory: { date: Date.now() } } }
+    );
     if (urlEntry) {
         res.redirect(urlEntry.redirectUrl);
     } else {

@@ -2,7 +2,7 @@ import { REST, Routes, SlashCommandBuilder } from "discord.js";
 import config from "./config.js";
 const commands = [
   new SlashCommandBuilder()
-    .setName("create")
+    .setName("createlink")
     .setDescription("Replies with pong!")
     .addStringOption((option) =>
       option
@@ -28,6 +28,18 @@ const commands = [
     )
     .addStringOption((option) =>
       option.setName("lon").setDescription("longitude").setRequired(true)
+    ),
+    new SlashCommandBuilder()
+    .setName("checklink")
+    .setDescription("Get the link details")
+    .addStringOption((option) =>
+      option.setName("id").setDescription("/N62EfjNv last 8 digit of link created using this server.").setRequired(true)
+    ),
+    new SlashCommandBuilder()
+    .setName("deletelink")
+    .setDescription("Delete the link")
+    .addStringOption((option) =>
+      option.setName("id").setDescription("/N62EfjNv last 8 digit of link created using this server.").setRequired(true)
     ),
 ].map((command) => command.toJSON());
 
